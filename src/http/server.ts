@@ -1,11 +1,10 @@
 import fastify from 'fastify'
-import { PrismaClient } from '@prisma/client'
 import { z } from 'zod'
-import { hashSync } from "bcrypt"
+import { hash } from "bcrypt"
+import { Login } from "../controllers/auth"
+import prisma from '../db/prisma'
 
 const app = fastify()
-
-const prisma = new PrismaClient()
 
 app.get('/', () => {
   return 'ok'
@@ -14,10 +13,10 @@ app.get('/', () => {
 app.post('/register', async (request) => {
   const createRegisterBody = z.object({
     email: z.string(),
-    user: z.string(),
+    name: z.string(),
     password: z.string()
   })
- const{ email, user, password } = createRegisterBody.parse(request.body)
+ const{ email, name, password } = createRegisterBody.parse(request.body)
 
 //  const{ email, user, password } = request.body
 
@@ -25,15 +24,15 @@ app.post('/register', async (request) => {
  const register = await prisma.login.create({
    data: {
     email,
-    user,
-    password: hashSync(password, 10)
+    name,
+    password: await hash(password, 10)
     }
   })
-  
-  console.log(email, user, password)
 
   return register
 })
+
+app.post('/login', Login)
 
 app.listen({ port: 3333 }).then(() =>  {
   console.log('HTTP Server running!')
